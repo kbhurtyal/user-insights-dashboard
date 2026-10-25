@@ -32,32 +32,49 @@ print(f"Missing purchase amounts (excluded from revenue): {purchases['amount'].i
 events = events.merge(users[["user_id", "plan"]], on="user_id", how="left")
 
 # ---------- CHARTS ----------
-fig1 = px.histogram(events, x="feature", title="Feature Usage Distribution")
-fig1.write_html("visuals/feature_usage_distribution.html")
+def save(fig, name):
+    fig.update_layout(template="plotly_white", title_x=0.5)
+    fig.write_html(f"visuals/{name}.html")
+    fig.write_image(f"visuals/{name}.png", width=1000, height=600, scale=2)
 
-fig2 = px.histogram(events.dropna(subset=["session_duration"]), x="session_duration",
-                    nbins=30, title="Session Duration Distribution (seconds)")
-fig2.write_html("visuals/session_duration.html")
+# 1. Feature usage
+feature_counts = events["feature"].value_counts().reset_index()
+feature_counts.columns = ["feature", "events"]
+fig1 = px.bar(feature_counts, x="feature", y="events",
+              title="Feature Usage Distribution", text="events")
+save(fig1, "feature_usage")
 
+# 2. Session duration
+fig2 = px.histogram(events.dropna(subset=["session_duration"]),
+                    x="session_duration", nbins=30,
+                    title="Session Duration Distribution (seconds)")
+save(fig2, "session_duration")
+
+# 3. Top 10 users
 top_users = events.groupby("user_id")["actions"].sum().sort_values(ascending=False).head(10)
 fig3 = px.bar(x=top_users.index, y=top_users.values,
-              labels={"x": "User ID", "y": "Total Actions"}, title="Top 10 Active Users")
-fig3.write_html("visuals/top_users.html")
+              labels={"x": "User ID", "y": "Total Actions"},
+              title="Top 10 Active Users")
+save(fig3, "top_users")
 
+# 4. Usage over time
 daily = events.groupby(["date", "feature"]).size().reset_index(name="count")
-fig4 = px.line(daily, x="date", y="count", color="feature", title="Feature Usage Over Time")
-fig4.write_html("visuals/feature_usage_over_time.html")
+fig4 = px.line(daily, x="date", y="count", color="feature",
+               title="Feature Usage Over Time")
+save(fig4, "usage_over_time")
 
-# New: engagement by plan
+# 5. Usage by plan
 by_plan = events.groupby(["plan", "feature"]).size().reset_index(name="count")
 fig5 = px.bar(by_plan, x="plan", y="count", color="feature", barmode="group",
               title="Feature Usage by Plan")
-fig5.write_html("visuals/usage_by_plan.html")
+save(fig5, "usage_by_plan")
 
-# New: revenue over time
+# 6. Daily revenue
 revenue = (purchases.dropna(subset=["amount"])
            .groupby("purchase_date")["amount"].sum().reset_index())
-fig6 = px.line(revenue, x="purchase_date", y="amount", title="Daily Revenue")
-fig6.write_html("visuals/daily_revenue.html")
+fig6 = px.line(revenue, x="purchase_date", y="amount", markers=True,
+               labels={"purchase_date": "Date", "amount": "Revenue ($)"},
+               title="Daily Revenue")
+save(fig6, "daily_revenue")
 
-print("Saved 6 charts to the visuals folder")
+print("Saved charts (.html and .png) to the visuals folder")

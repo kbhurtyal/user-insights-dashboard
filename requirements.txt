@@ -1,3 +1,14 @@
-pandas
-numpy
-plotly
+choreographer==1.4.0
+duckdb==2.0.0
+kaleido==1.5.0
+logistro==2.0.1
+narwhals==2.27.1
+numpy==2.5.4
+packaging==26.3
+pandas==3.1.0
+platformdirs==4.13.5
+plotly==7.1.0
+python-dateutil==3.0.0
+simplejson==4.2.0
+six==1.17.0
+tzdata==2026.5
